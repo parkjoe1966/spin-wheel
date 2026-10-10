@@ -172,6 +172,14 @@ textarea.input{resize:vertical;min-height:64px;font-family:var(--f-num);font-siz
 .install-help ol{margin:0;padding-left:20px}
 .install-help .btn{justify-self:start}
 
+.inapp{background:var(--surface);border:2px solid var(--accent);border-radius:var(--r-md);padding:16px;margin-block:16px 4px;display:grid;gap:10px}
+.inapp-head{display:flex;justify-content:space-between;align-items:start;gap:10px}
+.inapp strong{font-size:16px;line-height:1.35}
+.inapp p{margin:0;font-size:14px;color:var(--muted)}
+.inapp .btn-row .btn{flex:1 1 150px}
+.inapp-close{border:0;background:transparent;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;padding:0 4px}
+.inapp-link{font-size:13px;color:var(--accent);background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;justify-self:start}
+
 /* installed app */
 html{-webkit-tap-highlight-color:transparent}
 .stage{-webkit-user-select:none;user-select:none;touch-action:manipulation}
@@ -187,6 +195,19 @@ html{-webkit-tap-highlight-color:transparent}
 </style>
 
 <div class="wrap">
+  <div class="inapp" id="inapp" hidden role="region" aria-label="브라우저 안내">
+    <div class="inapp-head">
+      <strong id="inappTitle">카카오톡 안에서 열려 있어요</strong>
+      <button class="inapp-close" id="inappClose" type="button" aria-label="안내 닫기">×</button>
+    </div>
+    <p id="inappText">앱으로 설치하려면 Chrome에서 열어 주세요. 여기서도 룰렛은 바로 쓸 수 있어요.</p>
+    <div class="btn-row">
+      <button class="btn primary" id="inappOpen" type="button">Chrome으로 열기</button>
+      <button class="btn ghost" id="inappCopy" type="button">링크 복사</button>
+    </div>
+    <button class="inapp-link" id="inappAlt" type="button" hidden>Chrome이 안 열리면 다른 브라우저로 열기</button>
+  </div>
+
   <header class="top">
     <div class="brand">
       <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
@@ -1009,7 +1030,41 @@ html{-webkit-tap-highlight-color:transparent}
     if (!standalone) installBtn.hidden = false;
   });
   window.addEventListener('appinstalled', () => { installBtn.hidden = true; toast('홈 화면에 설치했어요'); });
-  if (isIOS && !standalone) installBtn.hidden = false;
+  // In-app browsers (KakaoTalk etc.) can't install apps, so offer a way out to a real browser.
+  const ua = navigator.userAgent;
+  const isAndroid = /android/i.test(ua);
+  const isKakao = /KAKAOTALK/i.test(ua);
+  const inApp = isKakao || /NAVER\(inapp|Instagram|FBAN|FBAV|Line\/|DaumApps|BAND\/|everytimeApp|; wv\)/i.test(ua);
+  if (inApp && !standalone && (isAndroid || isIOS)) {
+    const box = $('#inapp'), here = location.href;
+    const appName = isKakao ? '카카오톡' : '앱';
+    $('#inappTitle').textContent = `${appName} 안에서 열려 있어요`;
+    if (isAndroid) {
+      const chromeIntent = `intent://${location.host}${location.pathname}${location.search}#Intent;scheme=https;package=com.android.chrome;end`;
+      $('#inappOpen').addEventListener('click', () => { location.href = chromeIntent; });
+      if (isKakao) {
+        const alt = $('#inappAlt');
+        alt.hidden = false;
+        alt.addEventListener('click', () => { location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(here); });
+      }
+    } else {
+      $('#inappText').textContent = '앱으로 설치하려면 Safari에서 열어 주세요. 여기서도 룰렛은 바로 쓸 수 있어요.';
+      if (isKakao) {
+        $('#inappOpen').textContent = 'Safari로 열기';
+        $('#inappOpen').addEventListener('click', () => { location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(here); });
+      } else {
+        $('#inappOpen').hidden = true;
+        $('#inappText').textContent = '앱으로 설치하려면 링크를 복사해 Safari 주소창에 붙여넣어 주세요.';
+      }
+    }
+    $('#inappCopy').addEventListener('click', () => {
+      try {
+        navigator.clipboard.writeText(here).then(() => toast('링크를 복사했어요. 브라우저 주소창에 붙여넣으세요.'), () => toast(here));
+      } catch (e) { toast(here); }
+    });
+    $('#inappClose').addEventListener('click', () => { box.hidden = true; });
+    box.hidden = false;
+  } else if (isIOS && !standalone) installBtn.hidden = false;
   installBtn.addEventListener('click', async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
