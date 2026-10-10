@@ -1,5 +1,5 @@
 // Offline support: the app shell is cached on install, fonts are cached the first time they load.
-const CACHE = 'spinwheel-v3';
+const CACHE = 'spinwheel-v4';
 const SHELL = [
   './',
   './index.html',
