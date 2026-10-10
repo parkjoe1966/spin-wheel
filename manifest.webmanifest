@@ -1,0 +1,17 @@
+{
+  "name": "돌려돌려 룰렛",
+  "short_name": "돌려돌려",
+  "description": "선택지 개수만큼 칸이 생기는 룰렛. 고민될 땐 돌려보세요.",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#191D2A",
+  "theme_color": "#191D2A",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
